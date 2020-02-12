@@ -29,7 +29,31 @@ out first loses. If both run out simultaneously, it's a draw.
 
 const shuffle = require('secure-shuffle')
 
-module.exports = function playWar () {
+module.exports = function war (rounds) {
+  const results = []
+  let roundsPlayed = 0
+  let averageTurns = 0
+  while (rounds--) {
+    const { winner, turnResults } = play()
+    const winningDifferences = turnResults.reduce((acc, result) => {
+      acc[result.winningDifference] = (acc[result.winningDifference] || 0) + result.winningDifference
+      return acc
+    }, [])
+
+    averageTurns = (averageTurns * roundsPlayed + turnResults.length) / (roundsPlayed + 1)
+    roundsPlayed += 1
+
+    results.push({
+      winner,
+      turnResults,
+      winningDifferences
+    })
+  }
+
+  return { averageTurns, results }
+}
+
+function play () {
   const deck = getDeck()
   const shuffledDeck = shuffle(deck)
   const { playerOne, playerTwo } = deal(shuffledDeck)
@@ -41,9 +65,16 @@ module.exports = function playWar () {
     const playerOneCard = playerOne.shift()
     const playerTwoCard = playerTwo.shift()
     if (!playerOneCard || !playerTwoCard) {
-      return {
-        winner: playerOneCard ? 0 : 1,
-        turnResults
+      if (!playerOneCard && !playerTwoCard) {
+        return {
+          winner: 2,
+          turnResults
+        }
+      } else {
+        return {
+          winner: playerOneCard ? 0 : 1,
+          turnResults
+        }
       }
     }
 
@@ -53,9 +84,16 @@ module.exports = function playWar () {
       const playerOneSecondCard = playerOne.shift()
       const playerTwoSecondCard = playerTwo.shift()
       if (!playerOneSecondCard || !playerTwoSecondCard) {
-        return {
-          winner: playerOneSecondCard ? 0 : 1,
-          turnResults
+        if (!playerOneCard && !playerTwoCard) {
+          return {
+            winner: 2,
+            turnResults
+          }
+        } else {
+          return {
+            winner: playerOneSecondCard ? 0 : 1,
+            turnResults
+          }
         }
       }
 
